@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Maja i Noc Saunowa</title>
+    <style>
+        /* CSS DLA STRUKTURY GRY - BEZ ZMIAN W BAZIE */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100dvh; /* Dynamic Viewport Height */
+            background-color: #1a1a1a;
+            color: white;
+            overflow: hidden;
+        }
+        #game-container {
+            width: 100%;
+            height: 100dvh; 
+            position: relative;
+            background-color: #000;
+            overflow: hidden;
+        }
+        .scena {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; 
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            text-align: center;
+            
+            background-size: contain; 
+            background-repeat: no-repeat; 
+            background-position: center;
+            
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .scena.active {
+            display: flex;
+            opacity: 1; 
+        }
+        
+        /* STYL DIALOGU (UX) - BEZ ZMIAN */
+        .dialogue-box {
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            
+            padding: 2vmin; 
+            
+            width: 95%; 
+            max-width: 600px; 
+            min-height: 70px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            text-align: left;
+            
+            margin-bottom: 10px; 
+            margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        }
+        
+        /* 🔥 PŁYNNA TYPOGRAFIA (Fluid Typography) dla TEKSTÓW - BEZ ZMIAN */
+        #scena1 h1 {
+            font-size: clamp(22px, 2rem + 1.5vw, 40px);
+            line-height: 1.1;
+            margin-bottom: 0.5em;
+        }
+        .dialogue-box h2 {
+            font-size: clamp(18px, 1.5rem + 1vw, 28px);
+            line-height: 1.2;
+        }
+        .narrator-name {
+            font-weight: 800;
+            color: #FFC000; 
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+            margin-bottom: 5px;
+            font-size: clamp(14px, 0.7rem + 0.3vw, 17px); 
+            display: block;
+            text-align: left;
+        }
+        .dialogue-text {
+            color: #F0F0F0;
+            line-height: 1.5;
+            margin-top: 5px;
+            font-size: clamp(13px, 0.6rem + 0.3vw, 16px); 
+        }
+
+        /* STYLISTYKA PRZYCISKÓW AKCJI (KOREKTA Z OSTATNIEJ ITERACJI) */
+        /* Usunięto .choice-button, pozostawiono tylko .action-button */
+        .action-button {
+            font-size: clamp(12px, 0.7rem + 0.2vw, 15px);
+            padding: 2.5vmin 4vmin; 
+            margin: 8px auto; 
+            border: none;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+            width: 90%; 
+            max-width: 350px; 
+            display: block; 
+            text-decoration: none; 
+            box-sizing: border-box;
+            background-color: #0088CC; /* Domyślny kolor dla wszystkich akcji */
+            color: white;
+        }
+        
+        /* Specjalne style dla scen: */
+        #scena1 .dialogue-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 80%; 
+            max-width: 400px; 
+            padding: 4vmin; 
+            text-align: center;
+            margin-bottom: calc(50px + env(safe-area-inset-bottom, 0px)); 
+        }
+
+        /* Sceny z telefonem - przesuwamy dialogue-box na górę, aby był widoczny jako ekran telefonu */
+        #scena2 .dialogue-box, #scena3 .dialogue-box {
+            justify-content: flex-start; /* Przesuwa zawartość dialogu na górę */
+            align-self: flex-start; /* Przesuwa sam dialog-box na górę */
+            margin-top: calc(50px + env(safe-area-inset-top, 0px)); /* Odstęp od góry, z uwzględnieniem safe area */
+            margin-bottom: 0; /* Bez marginesu na dole */
+            height: auto; /* Wysokość dopasowana do treści */
+            min-height: unset; /* Usuwamy minimalną wysokość, jeśli ustawiona */
+            max-width: 300px; /* Szerokość jak telefon */
+            padding: 3vmin;
+            background: rgba(20, 20, 20, 0.9); /* Ciemniejszy, matowy kolor tła telefonu */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: left;
+        }
+        #scena2 .dialogue-box .action-button, 
+        #scena3 .dialogue-box .action-button {
+            margin-top: 15px; /* Odstęp przycisku od tekstu w telefonie */
+        }
+        #scena2 .dialogue-box .dialogue-text, 
+        #scena3 .dialogue-box .dialogue-text {
+             color: #E0E0E0; /* Jaśniejszy tekst w telefonie */
+        }
+
+
+        /* Styl biletowy (jeśli się pojawi - dla pewności zostawiłem) */
+        #ticket-info {
+            background: linear-gradient(to bottom, #fdf9f3, #ece6da);
+            color: #333;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+            margin-bottom: calc(50px + env(safe-area-inset-bottom, 0px));
+            max-width: 350px;
+            width: 90%; 
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+        }
+        .wide-scena {
+            background-color: #000 !important; 
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="scena1" class="scena active" style="background-image: url('grafika/scena 1.jpg'); opacity: 1;"> 
+        <div class="dialogue-box" style="text-align: center;">
+            <h1>Studia, Akta, Sauna, whaaaat?</h1>
+            <p class="dialogue-text" style="text-align: center; color: white;">Poznaj Maję, ambitną studentkę prawa.</p>
+            <button class="action-button" onclick="nextscena(1.2)">DALEJ</button>
+        </div>
+    </div>
+
+ <div id="scena1.2" class="scena" style="background-image: url('grafika/scena 1.2.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">**dźwięk sms'a**:</span>
+            <p class="dialogue-text">Maks Jabko napisał</p>
+            <button class="action-button" onclick="nextscena(2)">ZOBACZ SMS</button>
+        </div>
+    </div>
+	
+    <div id="scena2" class="scena" style="background-image: url('grafika/scena 2.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Maks (Jabko):</span>
+            <p class="dialogue-text">Jelonek zaprosił mnie na saunę!</p>
+            <button class="action-button" onclick="nextscena(3)">ODPISZ</button>
+        </div>
+    </div>
+    
+    <div id="scena3" class="scena" style="background-image: url('grafika/scena 3.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Maja:</span>
+            <p class="dialogue-text">A o mnie zapomnieli :)</p>
+            <button class="action-button" onclick="nextscena(4)">DALEJ</button>
+        </div>
+    </div>
+        
+    <div id="scena4" class="scena" style="background-image: url('grafika/scena 4.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Narrator:</span>
+            <p class="dialogue-text">Maja chowa telefon i wraca do przeglądania akt.</p>
+            <button class="action-button" onclick="nextscena(5)">DALEJ</button>
+        </div>
+    </div>
+
+    <div id="scena5" class="scena" style="background-image: url('grafika/scena 5.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Narrator:</span>
+            <p class="dialogue-text">Nagle, rozbrzmiewa dzwonek telefonu stacjonarnego.</p>
+            <button class="action-button" onclick="nextscena(6)">ODBIERZ</button>
+        </div>
+    </div>
+
+    <div id="scena6" class="scena" style="background-image: url('grafika/scena 6.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Jelonek:</span>
+            <p class="dialogue-text">"Czekamy na saunie, i wcale nie zapomnieliśmy!"</p>
+            <button class="action-button" onclick="nextscena(7)">DALEJ</button>
+        </div>
+    </div>
+        
+    <div id="scena7" class="scena wide-scena" style="background-image: url('grafika/scena 7.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Maja:</span>
+            <p class="dialogue-text">Super! Już jadę!</p>
+            <button class="action-button" onclick="nextscena(8)">DALEJ</button>
+        </div>
+    </div>
+
+    <div id="scena8" class="scena wide-scena" style="background-image: url('grafika/scena 8.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Narrator:</span>
+            <p class="dialogue-text">Maja pojawia się pod Pałacem Saturna,ale chwila... Gdzie wszyscy?.</p>
+            <button class="action-button" onclick="nextscena(8.5)">DALEJ</button>
+        </div>
+    </div>
+	
+	<div id="scena8.5" class="scena wide-scena" style="background-image: url('grafika/scena 8.5.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Jelonek:</span>
+            <p class="dialogue-text">Maja! Tutaj jesteśmy! Wiedzieliśmy, że przyjdziesz.</p>
+            <button class="action-button" onclick="nextscena(9)">DOŁĄCZAM DO NICH</button>
+        </div>
+    </div>
+        
+    <div id="scena9" class="scena wide-scena" style="background-image: url('grafika/scena 9.jpg');">
+        <div class="dialogue-box">
+            <span class="narrator-name">Narrator:</span>
+            <p class="dialogue-text">Maja wchodzi na Sauny</p>
+            <button class="action-button" onclick="nextscena(10)">DALEJ</button>
+        </div>
+    </div>
+
+<div id="scena10" class="scena wide-scena" style="background-image: url('grafika/scena 10.jpg');">
+        <div class="dialogue-box">
+            <h2 style="color: #FFC000; text-align: center;">IDEALNA NOC SAUNOWA</h2>
+            <p class="dialogue-text" style="color: white; text-align: center;">Cała czwórka cieszy się relaksem w saunie.</p>
+            <button class="action-button" onclick="nextscena(11)">ZACZNIJ OD NOWA</button>
+        </div>
+    </div>
+
+    <div id="scena11" class="scena wide-scena" style="background-image: url('grafika/scena 11.jpg');">
+        <div class="dialogue-box">
+            <h2 style="color: #FFC000; text-align: center;">IDEALNA NOC SAUNOWA</h2>
+                    <button class="action-button" onclick="nextscena(1)">ZACZNIJ OD NOWA</button>
+        </div>
+    </div>
+
+<script>
+    let currentscena = 1;
+    
+    // Lista scen i ich kolejność
+    const scenasOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
+
+    function showscena(scenaID) {
+        const targetscenaID = String(scenaID);
+        
+        document.querySelectorAll('.scena').forEach(scena => {
+            scena.classList.remove('active');
+            scena.style.opacity = '0'; 
+        });
+
+        const nextscenaElement = document.getElementById('scena' + targetscenaID);
+        if (nextscenaElement) {
+            nextscenaElement.classList.add('active');
+            currentscena = targetscenaID;
+            nextscenaElement.style.opacity = '1';
+        }
+    }
+
+    function nextscena(scenaID) {
+        const targetscenaID = String(scenaID);
+        
+        const currentElement = document.getElementById('scena' + currentscena);
+        if (currentElement) {
+            currentElement.style.opacity = '0';
+        }
+
+        setTimeout(() => {
+            showscena(targetscenaID);
+        }, 500);
+    }
+
+    // Dodatkowa funkcja do obsługi "next" dla prostych przejść
+    // Nie jest wymagana, jeśli używamy nextscena(ID) bezpośrednio, ale dobra praktyka dla sekwencji
+    function proceedToNextInOrder() {
+        const currentscenaIndex = scenasOrder.indexOf(Number(currentscena));
+        if (currentscenaIndex !== -1 && currentscenaIndex < scenasOrder.length - 1) {
+            nextscena(scenasOrder[currentscenaIndex + 1]);
+        } else {
+            // Koniec historii, np. powrót do początku lub inny ekran
+            nextscena(1); 
+        }
+    }
+
+    // Inicjalizacja pierwszej sceny
+    document.addEventListener('DOMContentLoaded', () => {
+        showscena(1);
+    });
+
+</script>
+
+</body>
+</html>
